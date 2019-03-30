@@ -1,29 +1,29 @@
-#V6666
+#V7777
 
 import keras
 from keras.models import Model
-from keras.layers import (Flatten,AveragePooling2D, merge, Activation, Conv2D, Input, MaxPooling2D, BatchNormalization, Lambda,SeparableConv2D,GlobalAveragePooling2D)
+from keras.layers import Flatten, Input, AveragePooling2D, merge, Activation
+from keras.layers import Conv2D, MaxPooling2D, BatchNormalization,GlobalAveragePooling2D
+from keras.layers import Concatenate
+from keras.optimizers import Adam
 from keras.layers.advanced_activations import LeakyReLU
+from keras.layers import Reshape, Activation, Conv2D, Input, MaxPooling2D, BatchNormalization, Flatten, Lambda,SeparableConv2D
 from keras.layers.merge import concatenate
 import tensorflow as tf
+
 
 def space_to_depth_x2(x):
     return tf.space_to_depth(x, block_size=2)
   
 def resNetBlock(input_image):
  
-  # Conv Layer 1
-  #layer1 = Conv2D(512, (3,3), strides=(1,1), padding='same', use_bias=False)(input_image)
-  #layer1 = BatchNormalization()(layer1)
-  #layer1 = LeakyReLU(alpha=0.1)(layer1)
-
   # Conv Layer 2
   layer2 = SeparableConv2D(1024, 3, strides=(1,1), padding='same', use_bias=False)(input_image)
   layer2 = BatchNormalization()(layer2)
   layer2 = LeakyReLU(alpha=0.1)(layer2)
 
   # Conv Layer 3
-  layer3 = SeparableConv2D(512,3, strides=(1,1), padding='same', use_bias=False)(layer2)
+  layer3 = SeparableConv2D(256,3, strides=(1,1), padding='same', use_bias=False)(layer2)
   layer3 = BatchNormalization()(layer3)
   
   return layer3  
@@ -65,7 +65,15 @@ adjusted_resNetBlock2 = Lambda(space_to_depth_x2)(resNetBlock2)
 concact3 = concatenate([resNetBlock3, adjusted_resNetBlock2])
 layer_l3 = LeakyReLU(alpha=0.1)(concact3)
 
-layer_ant = Conv2D(200, (1,1), strides=(1,1), padding='same', use_bias=False)(layer_l3)
+#maxpool3 = MaxPooling2D(pool_size=(2, 2))(layer_l3)
+
+#resNetBlock4 = resNetBlock(maxpool3)
+#layer_ant4 = Conv2D(256, (1,1), strides=(1,1), padding='same', use_bias=False)(resNetBlock4)
+#adjusted_resNetBlock3 = Lambda(space_to_depth_x2)(resNetBlock3)
+#concact4 = concatenate([layer_ant4, adjusted_resNetBlock3])
+#layer_l4 = LeakyReLU(alpha=0.1)(concact4)
+
+layer_ant = SeparableConv2D(200, 3, strides=(1,1), padding='same', use_bias=False)(layer_l3)
 global_avg = GlobalAveragePooling2D()(layer_ant)
 
 output = Activation('softmax')(global_avg)
